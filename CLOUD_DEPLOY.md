@@ -8,11 +8,33 @@ Provision an Ubuntu VPS. In its provider firewall/security group, allow inbound 
 SSH in, then install Docker Engine and the Docker Compose plugin using Docker's official Ubuntu instructions:
 https://docs.docker.com/engine/install/ubuntu/
 
-## 2. Deploy
+## 2. Give the VPS read-only access to the private GitHub repository
+
+This repository is private, so a plain HTTPS clone may not work without authentication. On the VPS, create a dedicated SSH deploy key:
+```bash
+ssh-keygen -t ed25519 -C "taiyu-trader-vps-deploy" -f ~/.ssh/taiyu_trader_deploy
+cat ~/.ssh/taiyu_trader_deploy.pub
+```
+Copy only the printed **public** key into GitHub: repository → Settings → Deploy keys → Add deploy key. Leave write access unchecked. Keep the private key on the VPS; never paste it into chat or commit it.
+
+Configure SSH for that key:
+```bash
+cat >> ~/.ssh/config <<'EOF'
+Host github-taiyu-trader
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/taiyu_trader_deploy
+  IdentitiesOnly yes
+EOF
+chmod 600 ~/.ssh/config
+ssh -T git@github-taiyu-trader
+```
+
+## 3. Deploy
 ```bash
 sudo apt-get update
 sudo apt-get install -y git
-git clone https://github.com/Za229/Taiyu-trader.git
+git clone git@github-taiyu-trader:Za229/Taiyu-trader.git
 cd Taiyu-trader
 cp .env.example .env
 ```
@@ -31,10 +53,10 @@ curl -I http://127.0.0.1:8000/
 sudo docker logs --tail 100 taiyu-trader
 ```
 
-## 3. HTTPS / public URL
+## 4. HTTPS / public URL
 For a production public URL, point a domain's DNS A record to the VPS IP and configure a reverse proxy such as Caddy or Nginx with HTTPS. Keep the app bound to 127.0.0.1:8000; expose only SSH (restricted to your IP) and web ports 80/443. Use the proxy's TLS automation and security updates.
 
-## 4. Updates
+## 5. Updates
 ```bash
 cd ~/Taiyu-trader
 git pull
