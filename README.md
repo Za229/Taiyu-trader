@@ -6,7 +6,7 @@ A starter crypto market dashboard using CoinDCX public candle API and an EMA 9/2
 
 ## Included
 - FastAPI API and dashboard
-- Public OHLCV market data from a CCXT-supported exchange
+- Public OHLCV market data from CoinDCX
 - EMA 9/21 and RSI-based BUY / SELL / WAIT signals
 - Illustrative stop-loss/take-profit levels
 - Dockerfile and GitHub Actions checks
@@ -22,8 +22,8 @@ A starter crypto market dashboard using CoinDCX public candle API and an EMA 9/2
 
 ## API endpoints
 - `GET /api/health`
-- `GET /api/market?symbol=BTC/USDT&timeframe=5m`
-- `GET /api/signal?symbol=BTC/USDT&timeframe=5m`
+- `GET /api/market?symbol=BTC/USDT&timeframe=1m`
+- `GET /api/signal?symbol=BTC/USDT&timeframe=1m`
 - `POST /api/trading/start` (deliberately refuses actual order execution)
 
 ## Exchange
