@@ -3,10 +3,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-EXCHANGE_ID = os.getenv("EXCHANGE_ID", "binance")
+EXCHANGE_ID = os.getenv("EXCHANGE_ID", "coindcx").lower()
 DEFAULT_SYMBOL = os.getenv("DEFAULT_SYMBOL", "BTC/USDT")
-DEFAULT_TIMEFRAME = os.getenv("DEFAULT_TIMEFRAME", "5m")
-CANDLE_LIMIT = int(os.getenv("CANDLE_LIMIT", "100"))
+DEFAULT_TIMEFRAME = os.getenv("DEFAULT_TIMEFRAME", "1m")
+CANDLE_LIMIT = min(max(int(os.getenv("CANDLE_LIMIT", "100")), 25), 1000)
 TRADING_MODE = os.getenv("TRADING_MODE", "paper").lower()
 ENABLE_LIVE_TRADING = os.getenv("ENABLE_LIVE_TRADING", "false").lower() == "true"
 LIVE_TRADING_ACK = os.getenv("LIVE_TRADING_ACK", "")
