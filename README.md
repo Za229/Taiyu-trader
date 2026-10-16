@@ -1,6 +1,6 @@
 # Taiyu-trader — Crypto Signal Dashboard
 
-A starter crypto market dashboard using live public exchange candles through CCXT and an EMA 9/21 + RSI strategy.
+A starter crypto market dashboard using CoinDCX public candle API and an EMA 9/21 + RSI strategy.
 
 > **Safety first:** the app runs in paper mode. It displays informational signals only and does not submit real orders. Crypto trading is risky; signals do not guarantee returns.
 
@@ -27,7 +27,7 @@ A starter crypto market dashboard using live public exchange candles through CCX
 - `POST /api/trading/start` (deliberately refuses actual order execution)
 
 ## Exchange
-Public market data defaults to Binance via CCXT. Change `EXCHANGE_ID` to a supported CCXT exchange ID as needed. The user's preferred exchange has not yet been specified.
+Public candles are fetched from CoinDCX's documented REST endpoint. The dashboard currently supports `BTC/USDT`, `ETH/USDT`, `SOL/USDT`, and `BNB/USDT` selections; confirm each pair is available on CoinDCX. CoinDCX candle intervals supported by the app are `1m`, `15m`, `1h`, and `1d`.
 
 ## Live execution status
 **Not implemented.** The trading-start endpoint intentionally returns an error instead of placing orders. Before any exchange execution is added, implement and test exchange-specific sandbox support, order idempotency, partial-fill/reconciliation handling, position sizing, daily loss limits, and an emergency stop.
