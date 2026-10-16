@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Taiyu-trader · Crypto Signals</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#141b2e;--muted:#9ba8c7;--line:#28324d;--text:#edf2ff;--green:#38d996;--red:#ff6b7a;--yellow:#f6c85f}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#0b1020,#111a31);font:15px system-ui;color:var(--text)}
+main{max-width:1050px;margin:auto;padding:28px 18px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-size:clamp(25px,5vw,38px);margin:4px 0}.sub{color:var(--muted)}.pill{border:1px solid #386f60;color:var(--green);padding:7px 11px;border-radius:999px;font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin:22px 0}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;min-width:0}
+.label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}.big{font-size:28px;font-weight:700;margin:9px 0}.muted{color:var(--muted)}select,button{background:#202b46;color:var(--text);border:1px solid #394768;border-radius:10px;padding:10px 12px;font:inherit}
+button{cursor:pointer;background:#176e55;border-color:#248a6b;font-weight:600}button:disabled{opacity:.6}.controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.signal{font-size:23px;font-weight:800}.BUY{color:var(--green)}.SELL{color:var(--red)}.WAIT{color:var(--yellow)}
+table{width:100%;border-collapse:collapse;margin-top:12px}td{padding:10px 0;border-bottom:1px solid var(--line)}td:last-child{text-align:right}
+.notice{border:1px solid #725c2b;background:#342b18;color:#f5d995;border-radius:12px;padding:13px 15px;line-height:1.5}
+#status{margin-top:12px;color:var(--muted);font-size:13px}footer{margin-top:24px;color:var(--muted);font-size:12px;line-height:1.6}
+</style></head>
+<body><main>
+<div class="top"><div><div class="sub">MARKET INTELLIGENCE · TAIYU</div><h1>Taiyu-trader</h1><div class="sub">Live public crypto data · EMA / RSI strategy</div></div><div class="pill">PAPER MODE · ORDERS OFF</div></div>
+<div class="controls"><select id="symbol"><option>BTC/USDT</option><option>ETH/USDT</option><option>SOL/USDT</option><option>BNB/USDT</option></select>
+<select id="timeframe"><option value="1m">1 minute</option><option value="5m" selected>5 minutes</option><option value="15m">15 minutes</option><option value="1h">1 hour</option><option value="4h">4 hours</option></select><button id="refresh">Refresh market</button></div>
+<div class="grid">
+<section class="card"><div class="label">Last price</div><div class="big" id="price">—</div><div class="muted" id="pair">BTC/USDT · 5m</div></section>
+<section class="card"><div class="label">Strategy signal</div><div class="big signal WAIT" id="signal">WAIT</div><div class="muted" id="reason">Waiting for market data…</div></section>
+<section class="card"><div class="label">Risk levels (illustrative)</div><table><tr><td>Entry</td><td id="entry">—</td></tr><tr><td>Stop loss</td><td id="sl">—</td></tr><tr><td>Take profit</td><td id="tp">—</td></tr></table></section>
+<section class="card"><div class="label">Indicators</div><table><tr><td>EMA 9</td><td id="ema9">—</td></tr><tr><td>EMA 21</td><td id="ema21">—</td></tr><tr><td>RSI 14</td><td id="rsi">—</td></tr><tr><td>Last candle UTC</td><td id="candle">—</td></tr></table></section></div>
+<div class="notice"><strong>Live orders are disabled.</strong> This dashboard reads public market data and produces informational signals only. Real-money trading can lose funds; automatic execution requires exchange-specific order handling, sandbox tests, risk limits, and explicit setup.</div>
+<div id="status">Connecting to exchange…</div><footer>Signals are not financial advice and do not guarantee accuracy or profit. Prices and indicators can be wrong or delayed during exchange/API outages. Never put exchange API keys in frontend code or commit secrets to GitHub.</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+function fmt(v){return v==null?'—':Number(v).toLocaleString(undefined,{maximumFractionDigits:8})}
+async function refresh(){
+ const symbol=$('symbol').value,timeframe=$('timeframe').value;
+ $('refresh').disabled=true;$('status').textContent='Fetching live public candles…';
+ try{
+  const qs=`symbol=${encodeURIComponent(symbol)}&timeframe=${encodeURIComponent(timeframe)}`;
+  const [m,s]=await Promise.all([fetch('/api/market?'+qs),fetch('/api/signal?'+qs)]);
+  if(!m.ok)throw new Error((await m.json()).detail||'Market API error');
+  if(!s.ok)throw new Error((await s.json()).detail||'Signal API error');
+  const market=await m.json(),sig=await s.json();
+  $('price').textContent=fmt(market.last_price);$('pair').textContent=`${symbol} · ${timeframe}`;
+  $('signal').textContent=sig.signal;$('signal').className='big signal '+sig.signal;
+  $('reason').textContent=sig.reason;$('entry').textContent=fmt(sig.entry);$('sl').textContent=fmt(sig.stop_loss);$('tp').textContent=fmt(sig.take_profit);
+  $('ema9').textContent=fmt(sig.ema_fast);$('ema21').textContent=fmt(sig.ema_slow);$('rsi').textContent=fmt(sig.rsi);$('candle').textContent=sig.candle_time||'—';
+  $('status').textContent=`Updated ${new Date().toLocaleTimeString()} · public exchange data · orders disabled`;
+ }catch(e){$('status').textContent='Could not update: '+e.message}
+ finally{$('refresh').disabled=false}
+}
+$('refresh').addEventListener('click',refresh);$('symbol').addEventListener('change',refresh);$('timeframe').addEventListener('change',refresh);
+refresh();setInterval(refresh,30000);
+</script></body></html>
