@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Taiyu-trader | Crypto Signals</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#141b2e;--muted:#9ba8c7;--line:#28324d;--text:#edf2ff;--green:#38d996;--red:#ff6b7a;--yellow:#f6c85f}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#0b1020,#111a31);font:15px system-ui;color:var(--text)}main{max-width:1050px;margin:auto;padding:28px 18px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}h1{font-size:clamp(25px,5vw,38px);margin:4px 0}.sub{color:var(--muted)}.pill{border:1px solid #386f60;color:var(--green);padding:7px 11px;border-radius:999px;font-size:12px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin:22px 0}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;min-width:0}.label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}.big{font-size:28px;font-weight:700;margin:9px 0}.muted{color:var(--muted)}select,button{background:#202b46;color:var(--text);border:1px solid #394768;border-radius:10px;padding:10px 12px;font:inherit}button{cursor:pointer;background:#176e55;border-color:#248a6b;font-weight:600}.controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.signal{font-size:23px;font-weight:800}.BUY{color:var(--green)}.SELL{color:var(--red)}.WAIT{color:var(--yellow)}table{width:100%;border-collapse:collapse;margin-top:12px}td{padding:10px 0;border-bottom:1px solid var(--line)}td:last-child{text-align:right}.notice{border:1px solid #725c2b;background:#342b18;color:#f5d995;border-radius:12px;padding:13px 15px;line-height:1.5}#status{margin-top:12px;color:var(--muted);font-size:13px}footer{margin-top:24px;color:var(--muted);font-size:12px;line-height:1.6}a{color:#85b9ff}
+</style></head><body><main>
+<div class="top"><div><div class="sub">MARKET INTELLIGENCE · TAIYU</div><h1>Taiyu-trader</h1><div class="sub">CoinDCX public market data · EMA / RSI signals</div></div><div class="pill">PAPER MODE · ORDERS OFF</div></div>
+<div class="controls"><select id="symbol"><option>BTC/USDT</option><option>ETH/USDT</option><option>SOL/USDT</option><option>BNB/USDT</option><option>BTC/INR</option><option>ETH/INR</option></select><select id="timeframe"><option value="1m" selected>1 minute</option><option value="15m">15 minutes</option><option value="1h">1 hour</option><option value="1d">1 day</option></select><button id="refresh">Refresh market</button></div>
+<div class="grid">
+<section class="card"><div class="label">Last candle close</div><div class="big" id="price">—</div><div class="muted" id="pair">BTC/USDT · 1m</div></section>
+<section class="card"><div class="label">Strategy signal</div><div class="big signal WAIT" id="signal">WAIT</div><div class="muted" id="reason">Loading CoinDCX public candles…</div></section>
+<section class="card"><div class="label">Illustrative risk levels</div><table><tr><td>Entry</td><td id="entry">—</td></tr><tr><td>Stop loss</td><td id="sl">—</td></tr><tr><td>Take profit</td><td id="tp">—</td></tr></table></section>
+<section class="card"><div class="label">Indicators</div><table><tr><td>EMA 9</td><td id="ema9">—</td></tr><tr><td>EMA 21</td><td id="ema21">—</td></tr><tr><td>RSI 14</td><td id="rsi">—</td></tr><tr><td>Last candle UTC</td><td id="candle">—</td></tr></table></section></div>
+<div class="notice"><strong>Informational signals only — no trading orders are placed.</strong> This GitHub Pages version fetches public market data directly from CoinDCX in your browser. Signals are not financial advice and do not guarantee profit. Verify the market is available on CoinDCX.</div><div id="status">Connecting to CoinDCX…</div>
+<footer>Static GitHub Pages edition. It does not host the FastAPI backend, store keys, or execute orders. CoinDCX public API terms and availability apply. Never put API keys in browser code or GitHub.<br><a href="https://github.com/Za229/Taiyu-trader">Source repository</a> · <a href="https://docs.coindcx.com/">CoinDCX API docs</a></footer>
+</main><script>
+const $=id=>document.getElementById(id);const fmt=v=>v==null||!Number.isFinite(Number(v))?'—':Number(v).toLocaleString(undefined,{maximumFractionDigits:8});
+function pairFor(symbol){const [base,quote]=symbol.split('/');return (quote==='INR'?'I':'B')+'-'+base+'_'+quote}
+async function candles(symbol,interval){
+ const url='https://api.coindcx.com/market_data/candles?pair='+encodeURIComponent(pairFor(symbol))+'&interval='+encodeURIComponent(interval)+'&limit=100';
+ const res=await fetch(url);if(!res.ok)throw new Error('CoinDCX API returned HTTP '+res.status);
+ const rows=await res.json();if(!Array.isArray(rows)||!rows.length)throw new Error('No candles returned for '+symbol+'. The pair may be unavailable.');
+ return rows.map(r=>({timestamp:Number(r.time),open:+r.open,high:+r.high,low:+r.low,close:+r.close,volume:+r.volume})).filter(r=>Number.isFinite(r.close)&&Number.isFinite(r.timestamp)).sort((a,b)=>a.timestamp-b.timestamp);
+}
+function ema(values,period){const k=2/(period+1);let out=values[0];const arr=[out];for(let i=1;i<values.length;i++){out=values[i]*k+out*(1-k);arr.push(out)}return arr}
+function calcRsi(values,period=14){let gain=0,loss=0;for(let i=1;i<=period;i++){const d=values[i]-values[i-1];gain+=Math.max(d,0);loss+=Math.max(-d,0)}gain/=period;loss/=period;for(let i=period+1;i<values.length;i++){const d=values[i]-values[i-1];gain=(gain*(period-1)+Math.max(d,0))/period;loss=(loss*(period-1)+Math.max(-d,0))/period}if(loss===0)return 100;return 100-100/(1+gain/loss)}
+async function refresh(){const symbol=$('symbol').value,interval=$('timeframe').value;$('refresh').disabled=true;$('status').textContent='Fetching CoinDCX public candles…';
+try{const rows=await candles(symbol,interval);if(rows.length<25)throw new Error('Need at least 25 candles; only '+rows.length+' received.');
+const closes=rows.map(r=>r.close),e9=ema(closes,9),e21=ema(closes,21),rsi=calcRsi(closes),n=rows.length-1,prev=n-1;
+let signal='WAIT',reason='No EMA crossover; wait for confirmation.';
+const up=e9[prev]<=e21[prev]&&e9[n]>e21[n],down=e9[prev]>=e21[prev]&&e9[n]<e21[n];
+if(up&&rsi>=45&&rsi<=68){signal='BUY';reason='EMA 9 crossed above EMA 21 and RSI is not overbought.'}else if(down&&rsi>=32&&rsi<=55){signal='SELL';reason='EMA 9 crossed below EMA 21 and RSI is not deeply oversold.'}
+const price=closes[n];$('price').textContent=fmt(price);$('pair').textContent=symbol+' · '+interval;$('signal').textContent=signal;$('signal').className='big signal '+signal;$('reason').textContent=reason;
+$('entry').textContent=fmt(price);$('sl').textContent=signal==='BUY'?fmt(price*.99):signal==='SELL'?fmt(price*1.01):'—';$('tp').textContent=signal==='BUY'?fmt(price*1.02):signal==='SELL'?fmt(price*.98):'—';$('ema9').textContent=fmt(e9[n]);$('ema21').textContent=fmt(e21[n]);$('rsi').textContent=fmt(rsi);$('candle').textContent=new Date(rows[n].timestamp).toISOString();
+$('status').textContent='Updated '+new Date().toLocaleTimeString()+' · CoinDCX public data · orders disabled';
+}catch(e){$('status').textContent='Update failed: '+e.message+' (Your network or browser may block cross-origin requests.)';$('reason').textContent='Market data currently unavailable.'}finally{$('refresh').disabled=false}}
+$('refresh').addEventListener('click',refresh);$('symbol').addEventListener('change',refresh);$('timeframe').addEventListener('change',refresh);refresh();setInterval(refresh,60000);
+</script></body></html>
