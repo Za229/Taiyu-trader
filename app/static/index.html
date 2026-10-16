@@ -17,11 +17,11 @@ table{width:100%;border-collapse:collapse;margin-top:12px}td{padding:10px 0;bord
 #status{margin-top:12px;color:var(--muted);font-size:13px}footer{margin-top:24px;color:var(--muted);font-size:12px;line-height:1.6}
 </style></head>
 <body><main>
-<div class="top"><div><div class="sub">MARKET INTELLIGENCE · TAIYU</div><h1>Taiyu-trader</h1><div class="sub">Live public crypto data · EMA / RSI strategy</div></div><div class="pill">PAPER MODE · ORDERS OFF</div></div>
+<div class="top"><div><div class="sub">MARKET INTELLIGENCE · TAIYU</div><h1>Taiyu-trader</h1><div class="sub">CoinDCX public market data · EMA / RSI strategy</div></div><div class="pill">PAPER MODE · ORDERS OFF</div></div>
 <div class="controls"><select id="symbol"><option>BTC/USDT</option><option>ETH/USDT</option><option>SOL/USDT</option><option>BNB/USDT</option></select>
-<select id="timeframe"><option value="1m">1 minute</option><option value="5m" selected>5 minutes</option><option value="15m">15 minutes</option><option value="1h">1 hour</option><option value="4h">4 hours</option></select><button id="refresh">Refresh market</button></div>
+<select id="timeframe"><option value="1m">1 minute</option><option value="1m" selected>1 minute</option><option value="15m">15 minutes</option><option value="1h">1 hour</option><option value="1d">1 day</option></select><button id="refresh">Refresh market</button></div>
 <div class="grid">
-<section class="card"><div class="label">Last price</div><div class="big" id="price">—</div><div class="muted" id="pair">BTC/USDT · 5m</div></section>
+<section class="card"><div class="label">Last price</div><div class="big" id="price">—</div><div class="muted" id="pair">BTC/USDT · 1m</div></section>
 <section class="card"><div class="label">Strategy signal</div><div class="big signal WAIT" id="signal">WAIT</div><div class="muted" id="reason">Waiting for market data…</div></section>
 <section class="card"><div class="label">Risk levels (illustrative)</div><table><tr><td>Entry</td><td id="entry">—</td></tr><tr><td>Stop loss</td><td id="sl">—</td></tr><tr><td>Take profit</td><td id="tp">—</td></tr></table></section>
 <section class="card"><div class="label">Indicators</div><table><tr><td>EMA 9</td><td id="ema9">—</td></tr><tr><td>EMA 21</td><td id="ema21">—</td></tr><tr><td>RSI 14</td><td id="rsi">—</td></tr><tr><td>Last candle UTC</td><td id="candle">—</td></tr></table></section></div>
@@ -33,7 +33,7 @@ const $=id=>document.getElementById(id);
 function fmt(v){return v==null?'—':Number(v).toLocaleString(undefined,{maximumFractionDigits:8})}
 async function refresh(){
  const symbol=$('symbol').value,timeframe=$('timeframe').value;
- $('refresh').disabled=true;$('status').textContent='Fetching live public candles…';
+ $('refresh').disabled=true;$('status').textContent='Fetching CoinDCX public candles…';
  try{
   const qs=`symbol=${encodeURIComponent(symbol)}&timeframe=${encodeURIComponent(timeframe)}`;
   const [m,s]=await Promise.all([fetch('/api/market?'+qs),fetch('/api/signal?'+qs)]);
@@ -44,8 +44,8 @@ async function refresh(){
   $('signal').textContent=sig.signal;$('signal').className='big signal '+sig.signal;
   $('reason').textContent=sig.reason;$('entry').textContent=fmt(sig.entry);$('sl').textContent=fmt(sig.stop_loss);$('tp').textContent=fmt(sig.take_profit);
   $('ema9').textContent=fmt(sig.ema_fast);$('ema21').textContent=fmt(sig.ema_slow);$('rsi').textContent=fmt(sig.rsi);$('candle').textContent=sig.candle_time||'—';
-  $('status').textContent=`Updated ${new Date().toLocaleTimeString()} · public exchange data · orders disabled`;
- }catch(e){$('status').textContent='Could not update: '+e.message}
+  $('status').textContent=`Updated ${new Date().toLocaleTimeString()} · CoinDCX public market data · orders disabled`;
+ }catch(e){$('status').textContent='CoinDCX update failed: '+e.message}
  finally{$('refresh').disabled=false}
 }
 $('refresh').addEventListener('click',refresh);$('symbol').addEventListener('change',refresh);$('timeframe').addEventListener('change',refresh);
