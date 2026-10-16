@@ -6,11 +6,11 @@ services:
     healthCheckPath: /api/health
     envVars:
       - key: EXCHANGE_ID
-        value: binance
+        value: coindcx
       - key: DEFAULT_SYMBOL
         value: BTC/USDT
       - key: DEFAULT_TIMEFRAME
-        value: 5m
+        value: 1m
       - key: TRADING_MODE
         value: paper
       - key: ENABLE_LIVE_TRADING
