@@ -1,16 +1,53 @@
-# Cloud deployment (safe starter)
+# VPS deployment (Ubuntu 22.04/24.04, Docker)
 
-This service can be deployed as a Docker web service on a cloud host that supports Docker (for example, Render, Railway, Fly.io, or a VPS). Provider settings change over time; use the provider's current Docker deployment instructions.
+Taiyu-trader currently uses CoinDCX's public candle endpoint and runs in paper mode. It does not place orders.
 
-## Suggested steps
-1. Upload this project to the GitHub repository.
-2. Create a Docker web service from the repository. Use the included `Dockerfile`; the app listens on port `8000`. Configure the host to expose that port or inject its expected `PORT` as needed.
-3. Set environment variables from `.env.example` in the cloud provider dashboard. Keep `TRADING_MODE=paper`, `ENABLE_LIVE_TRADING=false`, and leave `LIVE_TRADING_ACK` blank.
-4. Open `/api/health` and `/` to verify service health and dashboard. Check logs for market-data connectivity.
-5. Run sandbox/testnet trials and review orders, duplicate-order protection, retries, precision/minimum order sizes, rate limits, partial fills, and kill-switch behavior before implementing any real order execution.
+## 1. Prepare the VPS
+Provision an Ubuntu VPS. In its provider firewall/security group, allow inbound TCP 22 from your IP and TCP 80/443 as needed. Do not expose port 8000 publicly in production.
 
-## Important deployment note
-The current starter intentionally does **not** implement actual order placement. The `/api/trading/start` endpoint refuses to run live orders, even if the configuration gate is satisfied. Cloud deployment does not make it a live trading bot by itself.
+SSH in, then install Docker Engine and the Docker Compose plugin using Docker's official Ubuntu instructions:
+https://docs.docker.com/engine/install/ubuntu/
 
-## Secrets
-Use the cloud provider's encrypted environment-variable/secret settings. Use exchange API keys with withdrawals disabled and only the minimum required trading permissions. Never put keys in browser JavaScript, source code, logs, GitHub commits, or screenshots.
+## 2. Deploy
+```bash
+sudo apt-get update
+sudo apt-get install -y git
+git clone https://github.com/Za229/Taiyu-trader.git
+cd Taiyu-trader
+cp .env.example .env
+```
+
+Leave `TRADING_MODE=paper`, `ENABLE_LIVE_TRADING=false`, and API key fields empty. Then build and run:
+```bash
+sudo docker build -t taiyu-trader .
+sudo docker run -d --name taiyu-trader --restart unless-stopped \
+  --env-file .env -e PORT=8000 -p 127.0.0.1:8000:8000 taiyu-trader
+```
+
+Verify on the VPS:
+```bash
+curl http://127.0.0.1:8000/api/health
+curl -I http://127.0.0.1:8000/
+sudo docker logs --tail 100 taiyu-trader
+```
+
+## 3. HTTPS / public URL
+For a production public URL, point a domain's DNS A record to the VPS IP and configure a reverse proxy such as Caddy or Nginx with HTTPS. Keep the app bound to 127.0.0.1:8000; expose only SSH (restricted to your IP) and web ports 80/443. Use the proxy's TLS automation and security updates.
+
+## 4. Updates
+```bash
+cd ~/Taiyu-trader
+git pull
+sudo docker build -t taiyu-trader .
+sudo docker rm -f taiyu-trader
+sudo docker run -d --name taiyu-trader --restart unless-stopped \
+  --env-file .env -e PORT=8000 -p 127.0.0.1:8000:8000 taiyu-trader
+```
+
+## Important
+- The CoinDCX public candle API is documented at https://docs.coindcx.com/ and uses pair names such as `B-BTC_USDT`.
+- CoinDCX spot candle intervals documented here are `1m`, `15m`, `1h`, and `1d`.
+- Confirm symbol/pair availability on CoinDCX for the exact market you want.
+- Do not assume a sandbox exists; confirm the current test environment with CoinDCX before any order testing.
+- This project does not implement order placement. Do not add production trading keys until execution, reconciliation, rate limits, loss caps, duplicate-order prevention, and emergency stop have been independently tested.
+- Never share SSH passwords/private keys or exchange secrets in chat or commit them to GitHub.
