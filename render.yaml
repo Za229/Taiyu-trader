@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: taiyu-trader
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: EXCHANGE_ID
+        value: binance
+      - key: DEFAULT_SYMBOL
+        value: BTC/USDT
+      - key: DEFAULT_TIMEFRAME
+        value: 5m
+      - key: TRADING_MODE
+        value: paper
+      - key: ENABLE_LIVE_TRADING
+        value: "false"
